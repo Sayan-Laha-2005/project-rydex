@@ -25,12 +25,12 @@ export async function POST(req: NextRequest) {
 
 
 
-        const partnerIds = partners.map((p) => p._id.toString())
+        const partnerIds = partners.map(p => p._id)
 
 
         if (partnerIds.length == 0) {
             return NextResponse.json(
-                { message: "Vehicles not found" },
+                [],
                 { status: 404 })
         }
 

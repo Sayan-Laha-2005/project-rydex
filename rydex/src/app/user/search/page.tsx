@@ -1,32 +1,60 @@
 'use client'
 
-import { ArrowLeft, MapPin, Navigation } from 'lucide-react'
-import { motion } from 'motion/react'
+import { ArrowLeft, Bike, Car, MapPin, Navigation, RefreshCcw, Search, Truck, Zap } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 import dynamic from "next/dynamic";
 import axios from 'axios'
-import { IVehicle } from '@/models/vehicle.model'
+import { vehicleType } from '@/models/vehicle.model'
+import VehicleCard from '@/components/VehicleCard'
 
 const SearchMap = dynamic(
     () => import("@/components/SearchMap"),
     { ssr: false }
 );
 
+const VEHICLE_META: any = {
+    bike: { label: "Bike", Icon: Bike },
+    auto: { label: "Auto", Icon: Car },
+    car: { label: "Car", Icon: Car },
+    loading: { label: "Loading", Icon: Truck },
+    truck: { label: "Truck", Icon: Truck }
+};
+
+interface IVehicle{
+    _id:string,
+    owner:string,
+    type:vehicleType,
+    vehicleModel:string,
+    number:string,
+    imageUrl?:string,
+    baseFare?:number,
+    pricePerKM?:number,
+    waitingCharge?:number,
+    status:"approved" | "pending" | "rejected",
+    rejectionReason?:string,
+    isActive:boolean,
+    createdAt:Date,
+    updatedAt:Date
+}
+
+
 function page() {
     const router = useRouter()
     const params = useSearchParams()
     const [pickUp, setPickUp] = useState(params.get("pickup") || "")
     const [drop, setDrop] = useState(params.get("drop") || "")
-    const [km, setKm] = useState<number>()
+    const [km, setKm] = useState<number>(0)
     const mobile = params.get("mobile")
-    const vehicle = params.get("vehicle")
+    const vehicle = params.get("vehicle") || ""
     const pickUpLat = Number(params.get("pickupLat"))
     const pickUpLong = Number(params.get("pickupLong"))
     const dropLat = Number(params.get("dropLat"))
     const dropLong = Number(params.get("dropLong"))
     const [vehicles, setVehicles] = useState<IVehicle[]>([])
     const [loading, setLoading] = useState(false)
+    const meta = VEHICLE_META[vehicle]
 
     const getNearByVehicles = async (latitude: number, longitude: number, vehicleType: string | null) => {
         setLoading(true)
@@ -42,7 +70,7 @@ function page() {
 
     useEffect(() => {
         getNearByVehicles(pickUpLat, pickUpLong, vehicle)
-    }, [pickUpLat, pickUpLong])
+    }, [pickUpLat, pickUpLong, pickUp])
 
 
     return (
@@ -116,18 +144,128 @@ function page() {
                     </motion.div>
 
                     <motion.div
-                    initial={{ opacity: 0}}
-                    animate={{ opacity: 1}}
-                    transition={{ delay: 0.2 }}
-                    className='flex items-center justify-between mb-'
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className='flex items-center justify-between mb-4'
                     >
                         <div>
-                            <h2>
-                                
+                            <h2 className='text-zinc-900 text-lg font-black tracking-tight'>
+                                {loading
+                                    ?
+                                    "Finding Vehicles..."
+                                    :
+                                    vehicles.length > 0
+                                        ?
+                                        "Available Vehicles"
+                                        :
+                                        "No Vehicles Available Nearby"
+                                }
                             </h2>
+                            {
+                                meta &&
+                                <div className='text-zinc-400 text-xs mt-5'>
+                                    {meta.label} rides near your pickup
+                                </div>
+                            }
                         </div>
 
+                        <AnimatePresence
+                            mode='wait'
+                        >
+                            {loading ? (
+                                <motion.div
+                                    key="searching"
+                                    initial={{ opacity: 0, scale: 0.85 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.85 }}
+                                    className='flex items-center gap-2 bg-zinc-100 border border-zinc-200 px-3 py-1.5 rounded-full'
+                                >
+                                    <div className='w-3.5 h-3.5 rounded-full border-2 border-zinc-300 border-t-zinc-700 animate-spin' />
+                                    <span className='text-zinc-500 text-xs font-semibold'>Searching...</span>
+
+                                </motion.div>
+                            ) :
+                                vehicles.length > 0 ? (
+                                    <motion.div
+                                        key="live"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className='flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full'
+                                    >
+                                        <Zap size={11} className='text-emerald-600 fill-emerald-600' />
+                                        <span className='text-emerald-700'>Live</span>
+
+                                    </motion.div>
+                                ) : null
+
+                            }
+
+                        </AnimatePresence>
+
+
                     </motion.div>
+
+                    <AnimatePresence>
+                        {!loading && vehicles.length == 0 && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0 }}
+                                className='flex flex-col items-center justify-center py-14 text-center'
+                            >
+                                <div className='w-20 h-20 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center mb-4'>
+                                    <Search size={26} className='text-zinc-400' />
+                                </div>
+                                <p className='text-zinc-900 font-bold text-base mb-1'>Vehicles Not Found</p>
+                                <p className='text-zinc-400 text-sm max-w-xs leading-relaxed'>{meta.label || "Vehicle"} drivers are available near your pickup right now</p>
+                                <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => getNearByVehicles(pickUpLat, pickUpLong, vehicle)}
+                                    className='mt-5 flex items-center gap-2 bg-zinc-900 text-white text-sm font semibold px-6 py-2.5 rounded-xl hover:bg-zinc-800 transition-colors'
+                                >
+                                    <RefreshCcw size={14} />Retry Search
+                                </motion.button>
+
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+                        {vehicles.map((v, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 24 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{delay:i*0.06,duration:0.38,ease:[0.22,1,0.36,1]}}
+                            >
+                                <VehicleCard
+                                vehicle={v}
+                                distance={km}
+                                onBook={
+                                    ()=>{
+                                        const url=new URLSearchParams({
+                                            pickUp,drop,vehicle:v.type,
+                                            driverId:v.owner,
+                                            vehicleId:String(v._id),
+                                            fare:String(Math.round(v.baseFare! +( v.pricePerKM!*km))),
+                                            pickUpLat:String(pickUpLat),
+                                            pickUpLong:String(pickUpLong),
+                                            dropLat:String(dropLat),
+                                            dropLong:String(dropLong),
+                                            mobile:String(mobile)
+                                        })
+                                        router.push(`/user/checkout?${url.toString()}`)
+                                    }
+                                }
+                                />
+
+                            </motion.div>
+                        ))}
+
+                    </div>
+
+
                 </div>
 
             </motion.div>

@@ -113,7 +113,17 @@ function SearchMap({
 
   const geoCoding = async (q: string): Promise<[number, number] | null> => {
     try {
-      const { data } = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=1`)
+      const { data } = await axios.get("https://api.geoapify.com/v1/geocode/autocomplete",
+        {
+          params: {
+            text: q.trim(),
+            limit: 1,
+            filter: "countrycode:in",
+            apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY,
+          }
+        }
+      )
+
       if (!data.features.length) return null
       const [long, lat] = data.features[0].geometry.coordinates
       return [lat, long]
@@ -127,11 +137,18 @@ function SearchMap({
 
   const reverseGeoCoding = async (lat: number, long: number) => {
 
-    const { data } = await axios.get(`https://photon.komoot.io/reverse?lon=${long}&lat=${lat}`)
+    const { data } = await axios.get("https://api.geoapify.com/v1/geocode/reverse", {
+              params: {
+                lat,
+                long,
+                apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY,
+                filter: "countrycode:in"
+              }
+            })
 
     if (!data.features.length) return
-      const p = data.features[0].properties
-      return [p.name, p.street, p.city, p.state, p.country].filter(Boolean).join(",")
+    const p = data.features[0].properties
+    return [p.name, p.street, p.city, p.state, p.country].filter(Boolean).join(",")
 
   }
 
@@ -153,7 +170,7 @@ function SearchMap({
   }
 
   const dragPickUp = async (lat: number, long: number) => {
-    const addr=await reverseGeoCoding(lat, long)
+    const addr = await reverseGeoCoding(lat, long)
     setP1([lat, long])
     if (p2) {
       loadRoute([lat, long], p2)
@@ -161,12 +178,12 @@ function SearchMap({
     onChange?.(addr!, drop)
   }
   const dragDrop = async (lat: number, long: number) => {
-    const addr=await reverseGeoCoding(lat, long)
+    const addr = await reverseGeoCoding(lat, long)
     setP2([lat, long])
     if (p1) {
       loadRoute(p1, [lat, long])
     }
-    onChange?.(pickUp,addr!)
+    onChange?.(pickUp, addr!)
   }
 
   useEffect(() => {

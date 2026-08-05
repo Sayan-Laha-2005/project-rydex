@@ -4,6 +4,7 @@ import { vehicleType } from '@/models/vehicle.model'
 import axios from 'axios'
 import { ArrowLeft, Bike, Car, CheckCircle, ChevronRight, LocateFixed, MapPin, Navigation, Package, Phone, Truck } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
+import { filter } from 'motion/react-client'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 
@@ -67,7 +68,15 @@ function page() {
         setResults([])
         return
       }
-      const { data } = await axios.get(`https://photon.komoot.io/api/?q=${encodeURIComponent(q.trim())}&limit=8&lang=en`)
+      const { data } = await axios.get("https://api.geoapify.com/v1/geocode/autocomplete",
+        {
+          params: {
+            text: q.trim(),
+            limit: 5,
+            filter: "countrycode:in",
+            apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY,
+          },
+        })
 
       let results: Place[] = (data.features ?? []).map((f: any) => ({
         id: String(f.properties.osm_id),
@@ -99,7 +108,14 @@ function page() {
     navigator.geolocation.getCurrentPosition(async ({ coords }) => {
 
       try {
-        const { data } = await axios.get(`https://photon.komoot.io/reverse?lon=${coords.longitude}&lat=${coords.latitude}`)
+        const { data } = await axios.get("https://api.geoapify.com/v1/geocode/reverse", {
+          params: {
+            lat: coords.latitude,
+            lon: coords.longitude,
+            apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY,
+            filter: "countrycode:in"
+          }
+        })
 
         if (data.features.length) {
           const p = data.features[0].properties

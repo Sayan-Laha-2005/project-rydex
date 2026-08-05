@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from "motion/react"
 import Image from "next/image";
 import { usePathname } from 'next/navigation';
@@ -12,6 +12,7 @@ import { Bike, Car, ChevronRight, LogOut, Menu, Truck, X } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { setUserData } from '@/redux/userSlice';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 
 const Nav_Items = ["Home", "Booking", "About Us", "Contact"]
 
@@ -21,14 +22,34 @@ function Nav() {
     const [profileOpen, setProfileOpen] = useState(false)
     const [menuOpen, setMenuOpen] = useState(false)
     const { userData } = useSelector((state: RootState) => state.user)
+
+    const [pendingCount,setPendingCount]=useState()
     const dispatch = useDispatch<AppDispatch>()
-    const router=useRouter()
+    const router = useRouter()
 
     const handleLogOut = async () => {
         await signOut({ redirect: false })
         dispatch(setUserData(null))
         setProfileOpen(false)
     }
+
+    const fetchCount = async () => {
+        try {
+            const { data } = await axios.get("/api/partner/bookings/pending-requests-count")
+            console.log(data)
+            setPendingCount(data)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    useEffect(() => {
+        if (userData?.role == "partner") {
+            fetchCount()
+        }
+    }, [userData?.role])
+
+
     return (
         <>
             <motion.div
@@ -39,21 +60,36 @@ function Nav() {
                 <div className='max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between'>
                     <Image src={"/logo.jpeg"} alt='logo' width={44} height={44} priority />
                     <div className='hidden md:flex items-center gap-10'>
-                        {Nav_Items.map((i, index) => {
-                            let href;
-                            if (i == "Home") {
-                                href = `/`
-                            } else {
-                                href = `/${i.toLowerCase()}`
-                            }
 
-                            const active = href == pathName
-                            return <Link key={index} href={href} className={`text-sm font-medium transition
+                        {userData?.role == "partner" ? (
+                            <>
+                                <Link className='relative text-sm font-medium text-gray-300 hover:text-white transition' href={"/"}>Home</Link>
+                                <Link className='relative text-sm font-medium text-gray-300 hover:text-white transition' href={"/partner/pending-requests"}>Pending Requests
+                                    <span className='absolute -top-2 -right-5 w-6 h-6 bg-white text-black text-xs rounded-full flex items-center justify-center font-bold'>{pendingCount ?? 0}</span>
+                                </Link>
+                                <Link className='relative text-sm font-medium text-gray-300 hover:text-white transition' href={"/partner/bookings"}>Bookings</Link>
+                                <Link className='relative text-sm font-medium text-gray-300 hover:text-white transition' href={"/partner/active-ride"}>Active Ride </Link>
+                            </>
+                        ) :
+                            Nav_Items.map((i, index) => {
+                                let href;
+                                if (i == "Home") {
+                                    href = `/`
+                                } else {
+                                    href = `/${i.toLowerCase()}`
+                                }
+
+                                const active = href == pathName
+                                return <Link key={index} href={href} className={`text-sm font-medium transition
                         ${active
-                                    ? "text-white"
-                                    : "text-gray-400 hover:text-white"
-                                }`}>{i}</Link>
-                        })}
+                                        ? "text-white"
+                                        : "text-gray-400 hover:text-white"
+                                    }`}>{i}</Link>
+                            })
+                        }
+
+
+
                     </div>
 
                     <div className='flex items-center gap-3 relative'>
@@ -84,7 +120,7 @@ function Nav() {
                                                     <p className='font-semibold text-lg'>{userData.name}</p>
                                                     <p className='text-xs uppercase text-grey-500 mb-4'>{userData.role}</p>
                                                     {userData.role != "partner" && (
-                                                        <div className='w-full flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl' onClick={()=>router.push("/partner/onboarding/vehicle")}>
+                                                        <div className='w-full flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl' onClick={() => router.push("/partner/onboarding/vehicle")}>
                                                             <div className='flex -space-x-2'>
                                                                 <div className='w-6 h-6 rounded-full bg-black text-white flex items-center justify-center'><Bike size={14} /></div>
                                                                 <div className='w-6 h-6 rounded-full bg-black text-white flex items-center justify-center'><Car size={14} /></div>
@@ -213,7 +249,7 @@ function Nav() {
                                 <p className='font-semibold text-lg'>{userData.name}</p>
                                 <p className='text-xs uppercase text-grey-500 mb-4'>{userData.role}</p>
                                 {userData.role != "partner" && (
-                                    <div className='w-full flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl' onClick={()=>router.push("/partner/onboarding/vehicle")}>
+                                    <div className='w-full flex items-center gap-3 py-3 hover:bg-gray-100 rounded-xl' onClick={() => router.push("/partner/onboarding/vehicle")}>
                                         <div className='flex -space-x-2'>
                                             <div className='w-6 h-6 rounded-full bg-black text-white flex items-center justify-center'><Bike size={14} /></div>
                                             <div className='w-6 h-6 rounded-full bg-black text-white flex items-center justify-center'><Car size={14} /></div>

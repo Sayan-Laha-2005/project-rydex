@@ -36,7 +36,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     throw new Error("Incorrect password")
                 }
                 return {
-                    id: user._id,
+                    // JWTs must contain plain serializable values. Passing the
+                    // MongoDB ObjectId directly turns it into a buffer object
+                    // when the session is read back on the server.
+                    id: user._id.toString(),
                     name: user.name,
                     email: user.email,
                     role: user.role
@@ -53,16 +56,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if(account?.provider==="google") {
                 await connectDb();
                 let dbUser = await User.findOne({ email: user.email });
+                // A new Google user does not exist in `dbUser` until after it
+                // is created, so fetch/create in one flow before using its id.
                 if (!dbUser) {
-                    // Create a new user in the database
-                    await User.create({
+                    dbUser = await User.create({
                         name: user.name,
                         email: user.email,
                         role: "user"
                     });
                 }
-                user.id=dbUser._id
-                user.role=dbUser.role
+                user.id = dbUser._id.toString()
+                user.role = dbUser.role
                 
             }
             return true
