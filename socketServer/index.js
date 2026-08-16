@@ -34,8 +34,6 @@ io.on("connection",(socket)=>{
             socketId:socket.id,
             isOnline:true
         })
-        
-
     })
 
     socket.on("update-location",async({userId,latitude,longitude})=>{
@@ -48,7 +46,7 @@ io.on("connection",(socket)=>{
     })
 
     socket.on("disconnect",async ()=>{
-        if(!socket.userId) return
+        if(!socket.userId) return;
         await User.findByIdAndUpdate(socket.userId,{
             socketId:null,
             isOnline:false

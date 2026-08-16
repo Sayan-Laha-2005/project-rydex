@@ -4,6 +4,7 @@ import { BookingStatus, PaymentStatus } from '@/models/booking.model'
 import axios from 'axios'
 import { Clock, IndianRupee, Loader2, MapPin, Navigation } from 'lucide-react'
 import { motion } from 'motion/react'
+import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 
 export interface IBooking{
@@ -50,6 +51,7 @@ function page() {
 
     const [bookings, setBookings] = useState<IBooking[]>([])
     const [loading, setLoading] = useState(false)
+    const router=useRouter()
 
     const fetchPendingRequests = async () => {
         try {
@@ -66,7 +68,7 @@ function page() {
     const handleAccept=async (id:string)=>{
         try {
             const {data}=await axios.get(`/api/partner/bookings/${id}/accept`)
-            console.log(data)
+            router.push("partner/bookings")
         } catch (error) {
             console.log(error)
         }
@@ -74,7 +76,7 @@ function page() {
     const handleReject=async (id:string)=>{
         try {
             const {data}=await axios.get(`/api/partner/bookings/${id}/reject`)
-            console.log(data)
+            window.location.reload()
         } catch (error) {
             console.log(error)
         }

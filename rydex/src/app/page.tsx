@@ -20,7 +20,6 @@ export default async function Home() {
     {user?.role === "partner" && (
       <GeoUpdater userId={user._id.toString()} />
     )}
-      
     {user?.role=="partner"
     ?
     <>

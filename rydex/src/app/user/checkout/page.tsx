@@ -2,9 +2,10 @@
 
 import axios from 'axios';
 import { ArrowRight, Banknote, Bike, Car, CheckCircle, Clock, CreditCard, IndianRupee, Loader2, MapPin, Navigation, ShieldCheck, Truck, Wallet, XCircle } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion, resolveElements } from 'motion/react'
 import { div } from 'motion/react-client';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { resolve } from 'path';
 import React, { useEffect, useState } from 'react'
 
 
@@ -36,7 +37,7 @@ function page() {
     const { Icon, label } = VEHICLE_META[vehicle]
     const [loading, setLoading] = useState(false)
     const [booking, setBooking] = useState<any>()
-    const [paymentMethod,setPaymentMethod]=useState<"cash"|"online">("cash")
+    const [paymentMethod, setPaymentMethod] = useState<"cash" | "online">("cash")
 
     const [status, setStatus] = useState<Status>("idle")
 
@@ -70,6 +71,77 @@ function page() {
         }
     }
 
+    const loadRazorpayScript = () => {
+        return new Promise((resolve) => {
+            if (typeof window === "undefined") {
+                resolve(false)
+                return
+            }
+            if ((window as any).Razorpay) {
+                resolve(true)
+                return
+            }
+
+            const script = document.createElement("script")
+            script.src = "https://checkout.razorpay.com/v1/checkout.js"
+            script.onload = () => resolve(true)
+            script.onerror = () => resolve(false)
+            document.body.appendChild(script)
+        })
+    }
+
+    const handleConfirmPayment = async () => {
+        if (!booking || !paymentMethod) return
+        setLoading(true)
+        try {
+            if (paymentMethod == "online") {
+                const razorpayLoaded = await loadRazorpayScript()
+                if (!razorpayLoaded) {
+                    alert("razorpay script failed to load")
+                }
+
+                const { data } = await axios.post("/api/payment/create", {
+                    bookingId: booking._id
+                })
+
+
+                const paymentObject = new (window as any).Razorpay({
+                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                    amount: data.amount,
+                    currency: "INR",
+                    name: "RYDEX",
+                    description: "Ride Payment",
+                    order_id: data.orderId,
+                    handler: async function (response: any) {
+                        const { data } = await axios.post("/api/payment/verify", {
+                            bookingId: booking._id,
+                            ...response
+                        })
+                        setLoading(false)
+
+                        if (data.success) {
+                            setStatus("confirmed")
+                            window.location.href = `/ride/${booking._id}`
+                        }
+                    }
+                })
+
+                paymentObject.open()
+            } else {
+                const { data } = await axios.get(`/api/booking/${booking._id}/confirm`)
+                setLoading(false)
+                if (data.success) {
+                    setStatus("confirmed")
+                    window.location.href = `/ride/${booking._id}`
+                }
+            }
+        } catch (error) {
+            console.log(error)
+            setLoading(false)
+        }
+
+    }
+
     const fetchActiveBooking = async () => {
         try {
             const { data } = await axios.get("/api/booking/active")
@@ -83,7 +155,7 @@ function page() {
     const handleCancel = async () => {
         try {
             const { data } = await axios.get(`/api/booking/${booking._id}/cancel`)
-            console.log(data)
+            setStatus("idle")
         } catch (error) {
             console.log(error)
         }
@@ -93,14 +165,14 @@ function page() {
         fetchActiveBooking()
     }, [])
 
-    useEffect(()=>{
-        if(status!=="awaiting_payment") return
-        const t=setTimeout(()=>{
+    useEffect(() => {
+        if (status !== "awaiting_payment") return
+        const t = setTimeout(() => {
             setStatus("payment")
 
-        },2000)
-        return ()=>{clearTimeout(t)}
-    },[status])
+        }, 2000)
+        return () => { clearTimeout(t) }
+    }, [status])
 
     return (
         <div className='min-h-scren bg-zinc-100 px-4 py-12'>
@@ -293,12 +365,12 @@ function page() {
                                     >
 
                                         <motion.div
-                                        initial={{scale:0}}
-                                        animate={{scale:1}}
-                                        transition={{type:"spring",stiffness:260,damping:16}}
-                                        className='w-20 h-20 rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center'
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            transition={{ type: "spring", stiffness: 260, damping: 16 }}
+                                            className='w-20 h-20 rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center'
                                         >
-                                            <CheckCircle size={36} className='text-zinc-900'/>
+                                            <CheckCircle size={36} className='text-zinc-900' />
                                         </motion.div>
 
                                         <div>
@@ -308,24 +380,24 @@ function page() {
 
                                         <div className='w-48 h-1.5 bg-zinc 100 rounded-full overflow-hidden'>
                                             <motion.div
-                                            initial={{width:0}}
-                                            animate={{width:"100%"}}
-                                            transition={{duration:2}}
-                                            className='h-full bg-zinc-900 rounded-full'
+                                                initial={{ width: 0 }}
+                                                animate={{ width: "100%" }}
+                                                transition={{ duration: 2 }}
+                                                className='h-full bg-zinc-900 rounded-full'
                                             />
                                         </div>
 
                                     </motion.div>
                                 )}
 
-                                {status=="payment" && (
+                                {status == "payment" && (
                                     <motion.div
-                                    key="payment"
-                                    initial={{opacity:0,y:12}}
-                                    animate={{opacity:1,y:0}}
-                                    exit={{opacity:0}}
-                                    transition={{duration:0.3}}
-                                    className='flex flex-col flex-1 gap-6'
+                                        key="payment"
+                                        initial={{ opacity: 0, y: 12 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className='flex flex-col flex-1 gap-6'
                                     >
 
                                         <div>
@@ -335,25 +407,24 @@ function page() {
 
                                         <div className='space-y-3'>
                                             {[
-                                                {id:"cash",Icon: Banknote,title:"Cash",sub: "Pay driver after ride"},
-                                                {id:"online",Icon: Wallet,title:"Online Payment",sub: "UPI Card Netbanking"},
-                                            ].map((p,i)=>{
-                                                const active=paymentMethod==p.id
+                                                { id: "cash", Icon: Banknote, title: "Cash", sub: "Pay driver after ride" },
+                                                { id: "online", Icon: Wallet, title: "Online Payment", sub: "UPI Card Netbanking" },
+                                            ].map((p, i) => {
+                                                const active = paymentMethod == p.id
                                                 return (
                                                     <motion.div
-                                                    key={p.id}
-                                                    whileTap={{scale:0.97}}
-                                                    onClick={()=>setPaymentMethod(p.id as any)}
-                                                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200 ${
-                                                        active ? "bg-zinc-900 border-zinc-900"
-                                                        : "bg-zinc-50 border-zinc-200 hover:border-zinc-400"
-                                                    }`}
+                                                        key={p.id}
+                                                        whileTap={{ scale: 0.97 }}
+                                                        onClick={() => setPaymentMethod(p.id as any)}
+                                                        className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200 ${active ? "bg-zinc-900 border-zinc-900"
+                                                            : "bg-zinc-50 border-zinc-200 hover:border-zinc-400"
+                                                            }`}
                                                     >
                                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors
                                                             ${active ? "bg-white/10"
                                                                 : "bg-zinc-200"
                                                             }`}>
-                                                            <p.Icon size={18} className={active ? "text-white" : "text-zinc-600"}/>
+                                                            <p.Icon size={18} className={active ? "text-white" : "text-zinc-600"} />
                                                         </div>
                                                         <div className='flex-1 min-w-0'>
                                                             <p className={`text-sm font-old 
@@ -365,16 +436,16 @@ function page() {
                                                         <AnimatePresence>
                                                             {active && (
                                                                 <motion.div
-                                                                initial={{scale:0}}
-                                                                animate={{scale:1}}
-                                                                exit={{scale:0}}
+                                                                    initial={{ scale: 0 }}
+                                                                    animate={{ scale: 1 }}
+                                                                    exit={{ scale: 0 }}
                                                                 >
-                                                                    <CheckCircle size={16} className='text-white flex-shrink-0'/>
+                                                                    <CheckCircle size={16} className='text-white flex-shrink-0' />
                                                                 </motion.div>
                                                             )}
                                                         </AnimatePresence>
 
-                                                        
+
 
                                                     </motion.div>
                                                 )
@@ -382,16 +453,81 @@ function page() {
                                         </div>
 
                                         <motion.button
-                                        whileTap={{scale:0.97}}
-                                        whileHover={paymentMethod? {scale:1.02}:{}}
-                                        disabled={!paymentMethod}
-                                        className='w-full h-14 bg-zinc-900 hover:bg-black disaled:opacity-30 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-colors shadow-md mt-auto'
+                                            whileTap={{ scale: 0.97 }}
+                                            onClick={handleConfirmPayment}
+                                            whileHover={paymentMethod ? { scale: 1.02 } : {}}
+                                            disabled={!paymentMethod}
+                                            className='w-full h-14 bg-zinc-900 hover:bg-black disaled:opacity-30 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2.5 transition-colors shadow-md mt-auto'
                                         >
-                                            {paymentMethod=="cash"
-                                            ? <><Banknote size={16}/><span>Confirm Cash Ride</span></> 
-                                            : <><span>Proceed to Payment</span><ArrowRight size={16}/></>
+                                            {loading ? <Loader2 size={16} className='animate-spin' />
+                                                :
+                                                paymentMethod == "cash"
+                                                    ? <><Banknote size={16} /><span>Confirm Cash Ride</span></>
+                                                    : <><span>Proceed to Payment</span><ArrowRight size={16} /></>
                                             }
 
+                                        </motion.button>
+
+                                    </motion.div>
+                                )}
+
+                                {status == "confirmed" && (
+                                    <motion.div
+                                        key="confirmed"
+                                        initial={{ opacity: 0, scale: 0.94 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.4 }}
+                                        className='flex flex-col flex-1 items-center justify-center gap-5 text-center'
+                                    >
+                                        <motion.div
+                                            initial={{ scale: 0, rotate: -20 }}
+                                            animate={{ scale: 1, rotate: 0 }}
+                                            transition={{ type: "spring", stiffness: 240, damping: 14, delay: 0.1 }}
+                                            className='relative'
+                                        >
+                                            <div className='w-24 h-24 rounded-full bg-zinc-100 border-2 border-zinc-200 flex items-center justify-center'>
+                                                <CheckCircle size={44} className='text-zinc-900' />
+                                            </div>
+                                            {[0, 1].map(i => (
+                                                <motion.div
+                                                    initial={{ scale: 1, opacity: 0.5 }}
+                                                    animate={{ scale: 2.2 + i * 0.6, opacity: 0 }}
+                                                    transition={{ duration: 0.9, delay: 0.2 + i * 0.15 }}
+                                                    className='absolute inset-0 rounded-full border-2 border-zinc-900'
+                                                />
+                                            ))}
+
+
+                                        </motion.div>
+                                        <div>
+                                            <motion.h3
+                                                initial={{ opacity: 0, y: 8 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.3 }}
+                                                className='text-2xl font-black text-zinc-900 mb-1'
+                                            >
+                                                Ride Confirmed
+                                            </motion.h3>
+                                            <motion.p
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                            >
+                                                Your driver is on the way.Track live from the ride screen.
+                                            </motion.p>
+
+                                        </div>
+
+                                        <motion.button
+                                            initial={{ opacity: 0, y: 8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: 0.3 }}
+                                            whileTap={{scale:0.97}}
+                                            whileHover={{scale:1.05}}
+                                            onClick={()=>{window.location.href = `/ride/${booking._id}`}}
+                                            className='flex items-center gap-2.5 bg-zinc-900 hover:bg-black text-white font-black text-sm px-8 py-4 rounded-2xl transition-colors shadow-md'
+                                        >
+                                            Track Your Ride <ArrowRight size={16}/>
                                         </motion.button>
 
                                     </motion.div>
