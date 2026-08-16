@@ -57,7 +57,7 @@ function page() {
         const fetch = async () => {
             setLoading(true)
             try {
-                const { data } = await axios.get("/api/partner/bookings")
+                const { data } = await axios.get("/api/user/bookings")
                 console.log(data)
                 setBookings(data)
                 setLoading(false)
@@ -123,7 +123,7 @@ function page() {
                                 <Car className='w-5 h-5 text-blue-600' />
                             </div>
                             <div>
-                                <h1 className='text-2xl font-semibold text-gray-900'>Partner Bookings</h1>
+                                <h1 className='text-2xl font-semibold text-gray-900'>My Bookings</h1>
                                 <p className='text-gray-500 text-sm mt-1'>{bookings.length} {bookings.length === 1 ? 'ride' : 'rides'} assigned to you</p>
                             </div>
                         </div>
@@ -184,12 +184,12 @@ function page() {
                                             </div>
                                             <div className='flex-1'>
                                                 <div className='flex items-center justify-between'>
-                                                    <h3 className='font-semibold text-gray-900'>{b.user.name.toUpperCase() || "Customer"}</h3>
+                                                    <h3 className='font-semibold text-gray-900'>{b.driver.name.toUpperCase() || "Driver"}</h3>
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(b.bookingStatus)}`}>{b.bookingStatus || "-"}</span>
                                                 </div>
                                                 <div className='flex items-center gap-1 mt-1 text-xs text-gray-600'>
                                                     <Phone className='w-3 h-3' />
-                                                    <span>{b.userMobileNumber}</span>
+                                                    <span>{b.driverMobileNumber}</span>
                                                 </div>
                                             </div>
 
@@ -262,7 +262,7 @@ function page() {
                                         {b.bookingStatus !== "completed" && (
                                             <div className='flex items-center gap-2'>
                                                 <button 
-                                                onClick={()=>router.push("/partner/active-ride")}
+                                                onClick={()=>router.push("/user/active-ride")}
                                                 className='flex items-cener gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-1.5 rounded-lg transition-colors'>
                                                     <span>Details</span>
                                                     <ChevronRightIcon className='w-4'/>

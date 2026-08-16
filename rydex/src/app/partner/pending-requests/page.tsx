@@ -68,7 +68,7 @@ function page() {
     const handleAccept=async (id:string)=>{
         try {
             const {data}=await axios.get(`/api/partner/bookings/${id}/accept`)
-            router.push("partner/bookings")
+            router.push("/partner/bookings")
         } catch (error) {
             console.log(error)
         }

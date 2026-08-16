@@ -12,12 +12,12 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ message: "unauthorized" }, { status: 400 })
         }
 
-        const driver = await User.findById(session.user.id)
-        if (!driver || driver.role !== "partner") {
-            return NextResponse.json({ message: "partner not found" }, { status: 404 })
+        const user = await User.findById(session.user.id)
+        if (!user) {
+            return NextResponse.json({ message: "user not found" }, { status: 404 })
         }
 
-        const bookings = await Booking.find({ driver: driver._id })
+        const bookings = await Booking.find({ user: user._id })
             .populate("user driver vehicle")
             .sort({ createdAt: -1 })
 
@@ -25,6 +25,6 @@ export async function GET(req: NextRequest) {
             bookings, { status: 200 }
         )
     } catch (error) {
-        return NextResponse.json({ message: `get bookings for partner error ${error}` }, { status: 500 })
+        return NextResponse.json({ message: `get bookings for user error ${error}` }, { status: 500 })
     }
 }

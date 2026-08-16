@@ -75,8 +75,10 @@ function Nav() {
                                 let href;
                                 if (i == "Home") {
                                     href = `/`
+                                } else if (i == "Booking") {
+                                    href = "/user/bookings"
                                 } else {
-                                    href = `/${i.toLowerCase()}`
+                                    href = `/user/${i.toLowerCase()}`
                                 }
 
                                 const active = href == pathName
