@@ -13,6 +13,7 @@ import { signOut } from 'next-auth/react';
 import { setUserData } from '@/redux/userSlice';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { getSocket } from '@/lib/socket';
 
 const Nav_Items = ["Home", "Booking", "About Us", "Contact"]
 
@@ -23,7 +24,7 @@ function Nav() {
     const [menuOpen, setMenuOpen] = useState(false)
     const { userData } = useSelector((state: RootState) => state.user)
 
-    const [pendingCount,setPendingCount]=useState()
+    const [pendingCount,setPendingCount]=useState(0)
     const dispatch = useDispatch<AppDispatch>()
     const router = useRouter()
 
@@ -48,6 +49,17 @@ function Nav() {
             fetchCount()
         }
     }, [userData?.role])
+
+    useEffect(()=>{
+            const socket=getSocket()
+            console.log(socket)
+            socket.on("new-booking",(data)=>{
+                setPendingCount(prev=>prev+1)
+            })
+            return ()=>{
+                socket.off("new-booking")
+            }
+        },[])
 
 
     return (

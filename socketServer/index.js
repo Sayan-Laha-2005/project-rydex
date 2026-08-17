@@ -19,6 +19,7 @@ const connectDb=async () => {
 }
 
 const app=express()
+app.use(express.json())
 
 const server=http.createServer(app)
 
@@ -27,6 +28,21 @@ const io=new Server(server,{
         origin:process.env.NEXT_BASE_URL
     }
 })
+
+app.post("/emit",async (req,res)=>{
+const {event,userId,data}=req.body
+try {
+    const user=await User.findById(userId)
+    if(user.socketId){
+        io.to(user.socketId).emit(event,data)
+    }
+    return res.json({success:true})
+} catch (error) {
+    return res.json({success:false})
+}
+})
+
+
 io.on("connection",(socket)=>{
     socket.on("identity",async (userId)=>{
         socket.userId=userId

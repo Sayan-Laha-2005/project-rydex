@@ -1,5 +1,6 @@
 'use client'
 
+import { getSocket } from '@/lib/socket'
 import { BookingStatus, PaymentStatus } from '@/models/booking.model'
 import axios from 'axios'
 import { Clock, IndianRupee, Loader2, MapPin, Navigation } from 'lucide-react'
@@ -58,6 +59,7 @@ function page() {
             setLoading(true)
             const { data } = await axios.get("/api/partner/bookings/pending")
             setBookings(data)
+            setLoading(false)
         } catch (error) {
             console.log(error)
         } finally {
@@ -73,6 +75,8 @@ function page() {
             console.log(error)
         }
     }
+
+
     const handleReject=async (id:string)=>{
         try {
             const {data}=await axios.get(`/api/partner/bookings/${id}/reject`)
@@ -85,6 +89,17 @@ function page() {
     useEffect(() => {
         fetchPendingRequests()
     }, [])
+
+    useEffect(()=>{
+        const socket=getSocket()
+        console.log(socket)
+        socket.on("new-booking",(data)=>{
+            setBookings((prev)=>[...prev,data])
+        })
+        return ()=>{
+            socket.off("new-booking")
+        }
+    },[])
 
 
     return (

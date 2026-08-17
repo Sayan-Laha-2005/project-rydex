@@ -17,7 +17,7 @@ export default async function Home() {
   console.log(session);
   return (
     <div className="w-full min-h-screen bg-white"> 
-    {user?.role === "partner" && (
+    {user && (
       <GeoUpdater userId={user._id.toString()} />
     )}
     {user?.role=="partner"

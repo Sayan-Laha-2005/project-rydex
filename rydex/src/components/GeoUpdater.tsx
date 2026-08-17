@@ -1,20 +1,23 @@
 'use client'
 
 import { getSocket } from '@/lib/socket'
-import React, { useEffect, useRef } from 'react'
+import type { Socket } from 'socket.io-client'
+import { useEffect, useRef } from 'react'
 
 function GeoUpdater({ userId }: { userId: string }) {
-    const socketRef = useRef<any>(null)
+    const socketRef = useRef<Socket | null>(null)
 
     useEffect(() => {
         if (!userId) return
+
+        const socket = getSocket()
+        socketRef.current = socket
+        socket.emit("identity", userId)
+
         if (!navigator.geolocation) return
 
-        socketRef.current = getSocket()
-        socketRef.current.emit("identity", userId)
-
         const watcher = navigator.geolocation.watchPosition(({coords}) => {
-            socketRef.current.emit("update-location", {
+            socket.emit("update-location", {
                 userId,
                 latitude: coords.latitude,
                 longitude: coords.longitude

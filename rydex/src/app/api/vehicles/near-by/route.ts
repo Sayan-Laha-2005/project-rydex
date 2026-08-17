@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
         if (partnerIds.length == 0) {
             return NextResponse.json(
                 [],
-                { status: 404 })
+                { status: 200 })
         }
 
 

@@ -222,15 +222,15 @@ function SearchMap({
           subdomains={['a', 'b', 'c', 'd']}
         />
         {p1 && p2 &&
-          <FitBounds p1={p1} p2={p2} />
+          <FitBounds key="route-bounds" p1={p1} p2={p2} />
         }
-        {p1 && <Marker position={p1} icon={pickUpIcon} draggable eventHandlers={{
+        {p1 && <Marker key="pickup-marker" position={p1} icon={pickUpIcon} draggable eventHandlers={{
           dragend: e => {
             const m = e.target.getLatLng()
             dragPickUp(m.lat, m.lng)
           }
         }} />}
-        {p2 && <Marker position={p2} icon={dropIcon} draggable eventHandlers={{
+        {p2 && <Marker key="drop-marker" position={p2} icon={dropIcon} draggable eventHandlers={{
           dragend: e => {
             const m = e.target.getLatLng()
             dragDrop(m.lat, m.lng)
@@ -239,7 +239,7 @@ function SearchMap({
 
         {route.length > 0 && (
           <>
-            <Polyline positions={route} pathOptions={{ color: "#0a0a0a", weight: 5, lineCap: "round", lineJoin: "round" }} />
+            <Polyline key="route-line" positions={route} pathOptions={{ color: "#0a0a0a", weight: 5, lineCap: "round", lineJoin: "round" }} />
           </>
         )}
 
