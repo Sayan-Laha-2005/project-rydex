@@ -1,12 +1,13 @@
+'use client'
 import axios from 'axios';
 import L from 'leaflet';
 import React, { useEffect, useState } from 'react'
 import { MapContainer, Marker, Polyline, TileLayer } from 'react-leaflet'
 
 type Props={
-    driverLocation:[Number,Number] | null,
-    pickUpLocation:[Number,Number] | null,
-    dropLocation:[Number,Number] | null,
+    driverLocation:[number,number] | null,
+    pickUpLocation:[number,number] | null,
+    dropLocation:[number,number] | null,
     mapStatus:string,
     onStats:(data:{
         distanceToPickUp:number,
@@ -195,10 +196,10 @@ function LiveRideMap({driverLocation,dropLocation,pickUpLocation,mapStatus,onSta
     const [routeToDrop,setRouteToDrop]=useState<[number,number][]>([])
 
     useEffect(()=>{
-        if(!driverLocation) return;
-        const [pLat,pLong]=pickUpLocation as [number,number]
-        const [dLat,dLong]=dropLocation as [number,number]
-        const [drLat,drLong]=driverLocation as [number,number]
+        if(!driverLocation || !pickUpLocation || !dropLocation) return;
+        const [pLat,pLong]=pickUpLocation 
+        const [dLat,dLong]=dropLocation 
+        const [drLat,drLong]=driverLocation 
 
         const getRoute=async (startLat:number,startLong:number,endLat:number,endLong:number)=>{
             const res=await axios.get(`https://router.project-osrm.org/route/v1/driving/${startLong},${startLat};${endLong},${endLat}?overview=full&geometries=geojson`)

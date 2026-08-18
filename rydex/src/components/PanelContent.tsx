@@ -1,20 +1,30 @@
 'use client'
-import { Clock, IndianRupee, MessageCircle, Phone, User } from 'lucide-react'
-import { AnimatePresence, motion } from 'motion/react'
+import { Bike, Car, Clock, IndianRupee, MessageCircle, Phone, Truck, User } from 'lucide-react'
+import { AnimatePresence, motion, number } from 'motion/react'
 import React, { useEffect } from 'react'
 import RideChat from './RideChat'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/redux/store'
 
-function PanelContent({ isActive, displayDistance, displayEta, cfg, status, booking, paymentStatus, canChat, chatOpen, onChatToggle }: any) {
 
-    const { userData } = useSelector((state: RootState) => state.user)
-    let currentRole;
-    useEffect(() => {
-        if (userData) {
-            currentRole = userData?._id === booking.driver._id ? "driver" : "user"
-        }
-    }, [userData?._id])
+const getVehicleIcon = (vehicleType?: string) => {
+    switch (vehicleType?.toLowerCase()) {
+        case "bike":
+            return <Bike size={18} className="text-white" />;
+        case "auto":
+            return <Car size={18} className="text-white" />;
+        case "truck":
+            return <Truck size={18} className="text-white" />;
+        case "loading":
+        case "car":
+        default:
+            return <Car size={18} className="text-white" />;
+    }
+};
+
+
+function PanelContent({ isActive, displayDistance, displayEta, cfg, status, booking, paymentStatus, canChat, chatOpen, onChatToggle, currentRole }: any) {
+
     return (
         <div className='flex flex-col pt-5 pb-4 gap-3'>
             {isActive && (
@@ -119,14 +129,58 @@ function PanelContent({ isActive, displayDistance, displayEta, cfg, status, book
                         className="mx-5 lg:mx-6 overflow-hidden"
                     >
                         <div className='rounded-2xl overflow-hidden border border-zinc-100 h-[460px]'>
-                            
-                            <RideChat currentRole={currentRole} bookingId={booking._id} userName={booking?.user?.name || "customer"} driverName={booking.driver.name || "driver"}/>
+
+                            <RideChat currentRole={currentRole} bookingId={booking?._id} userName={booking?.user?.name || "customer"} driverName={booking?.driver?.name || "driver"} />
 
                         </div>
 
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {booking?.vehicle && (
+                <div className='mx-5 lg:mx-6'>
+                    <div className='bg-zinc-50 border border-zinc-100 rounded-2xl p-4 flex items-center gap-3'>
+                        <div className='w-11 h-11 rounded-xl bg-zinc-900 flex items-center justify-center flex-shrink-0'>
+                            {getVehicleIcon(booking.vehicle.type)}
+                        </div>
+                        <div className='flex-1 min-w-0'>
+                            <p className='text-[10px] text-zinc-400 uppercase tracking-wider font-semibold'>Your Vehicle</p>
+                            <p className='text-sm font-bold text-zinc-900 truncate'>{booking.vehicle.vehicleModel ?? "vehicle"}</p>
+                        </div>
+                        <div className='flex-shrink-0 bg-zinc-900 px-3 py-1.5 rounded-lg'>
+                            <p className='text-white text-xs font-black tracking-widest font-mono'>{booking.vehicle.number ?? "number"}</p>
+
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className='mx-5 lg:mx-6'>
+                <div className='bg-zinc-50 border border-zinc-100 rounded-2xl overflow-hidden'>
+                    <div className='flex gap-3 p-4 border-b border-zinc-100'>
+                        <div className='flex flex-col items-center flex-shrink-0 pt-1'>
+                            <div className='w-3 h-3 rounded-full bg-zinc-900 border-2 border-white shadow-sm' />
+                            <div className='w-px bg-zinc-200 mt-1' style={{ height: 20 }} />
+                        </div>
+                        <div className='flex-1 min-w-0'>
+                            <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-0.5'>Pick Up</p>
+                            <p className='text-sm text-zinc-800 leading-snug'>{booking?.pickUpAddress}</p>
+                        </div>
+                    </div>
+
+                    <div className='flex gap-3 p-4 border-b border-zinc-100'>
+                        <div className='flex flex-col items-center flex-shrink-0 pt-1'>
+                            <div className='w-3 h-3 rounded-full bg-zinc-900 border-2 border-white shadow-sm' />
+                            <div className='w-px bg-zinc-200 mt-1' style={{ height: 20 }} />
+                        </div>
+                        <div className='flex-1 min-w-0'>
+                            <p className='text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-0.5'>Drop</p>
+                            <p className='text-sm text-zinc-800 leading-snug'>{booking?.dropAddress}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
 
 

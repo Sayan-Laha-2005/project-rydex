@@ -5,6 +5,7 @@ export type BookingStatus="idle"|"requested"|"awaiting_payment"|"confirmed"|"sta
 export type PaymentStatus="pending"|"paid"|"cash"|"failed";
 
 export interface IBooking{
+    _id?:mongoose.Types.ObjectId
     user:mongoose.Types.ObjectId
     driver:mongoose.Types.ObjectId
     vehicle:mongoose.Types.ObjectId
